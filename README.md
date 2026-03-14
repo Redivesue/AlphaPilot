@@ -1,6 +1,14 @@
-# AlphaPilot V3 - Multi-Agent Alpha Factor Research System
+# AlphaPilot - LLM-Agent Driven Automated Quant Factor Research Platform
 
 Multi-agent system for automated alpha factor discovery with Planner, Generator, Evaluation, Backtest, and Report agents.
+
+## Screenshots
+
+| Dashboard | Factor Library |
+|:---:|:---:|
+| ![Dashboard](docs/screenshots/dashboard.png) | ![Factor Library](docs/screenshots/factor-library.png) |
+
+[中文说明 / Chinese README](README_CN.md)
 
 ## Architecture
 
