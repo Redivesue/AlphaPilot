@@ -1,0 +1,752 @@
+如果你想把 **AlphaPilot** 做到“**AI系统架构级项目**”（而不是普通 Agent demo），确实可以加入更先进的一些设计，例如：
+
+
+
+- **Multi-Agent orchestration**
+- **MCP（Model Context Protocol）**
+- **Skills / Tools registry**
+- **Memory / RAG**
+
+
+
+
+
+这样整个系统就会更像 **AI Agent Operating System**，而不是简单脚本调用。
+
+
+
+我给你设计一个**更工程化的版本**。
+
+
+
+------
+
+
+
+
+
+# **一、升级后的整体架构**
+
+
+
+
+
+最终系统可以设计成 **四层结构**：
+
+```
+Interface Layer
+↓
+Agent Orchestration Layer
+↓
+Skills / Tool Layer
+↓
+Data & Knowledge Layer
+```
+
+完整架构：
+
+```
+User / Research Goal
+        ↓
+Planner Agent
+        ↓
+Task Queue / Orchestrator
+        ↓
+ ┌───────────────────────────────┐
+ │ Generator Agent                │
+ │ Evaluation Agent               │
+ │ Backtest Agent                 │
+ │ Report Agent                   │
+ └───────────────┬────────────────┘
+                 ↓
+         Skills / Tool Library
+                 ↓
+      Quant Engine + Factor DB + RAG
+```
+
+核心思想：
+
+
+
+**Agent负责思考**
+
+**Skills负责执行**
+
+
+
+------
+
+
+
+
+
+# **二、Agent职责（详细版）**
+
+
+
+
+
+
+
+## **1 Planner Agent**
+
+
+
+
+
+作用：
+
+```
+研究任务规划
+```
+
+输入：
+
+```
+Find new alpha factor
+```
+
+Planner 输出：
+
+```
+Task 1: generate factor candidate
+Task 2: evaluate IC
+Task 3: backtest
+Task 4: generate report
+```
+
+技术：
+
+
+
+- Prompt planning
+- LLM reasoning
+
+
+
+
+
+------
+
+
+
+
+
+## **2 Generator Agent**
+
+
+
+
+
+负责：
+
+```
+因子生成
+```
+
+生成：
+
+```
+rank(ts_mean(returns,10))
+```
+
+约束：
+
+
+
+**Symbolic factor search space**
+
+
+
+算子：
+
+```
+ts_mean
+ts_std
+delta
+rank
+zscore
+```
+
+Generator Agent会：
+
+```
+Generate factor
+Check factor DB
+Avoid duplicate
+```
+
+这里会调用：
+
+
+
+**RAG**
+
+
+
+------
+
+
+
+
+
+## **3 Evaluation Agent**
+
+
+
+
+
+负责：
+
+```
+因子统计指标
+```
+
+计算：
+
+```
+IC
+ICIR
+rank IC
+factor decay
+OOS validation
+```
+
+技术：
+
+
+
+- Python quant tools
+- Pandas
+
+
+
+
+
+------
+
+
+
+
+
+## **4 Backtest Agent**
+
+
+
+
+
+负责：
+
+```
+策略回测
+```
+
+步骤：
+
+```
+signal generation
+portfolio construction
+transaction cost
+performance metrics
+```
+
+输出：
+
+```
+Sharpe
+Max drawdown
+Annual return
+```
+
+
+
+------
+
+
+
+
+
+## **5 Report Agent**
+
+
+
+
+
+负责：
+
+```
+生成研究报告
+```
+
+报告结构：
+
+```
+Factor description
+Factor expression
+IC statistics
+Backtest performance
+Risk exposure
+Conclusion
+```
+
+生成：
+
+
+
+Markdown / PDF
+
+
+
+------
+
+
+
+
+
+# **三、Skills / Tool 设计（非常关键）**
+
+
+
+
+
+在 Agent 系统里，**Skills 才是真正执行任务的模块**。
+
+
+
+你可以设计一个：
+
+
+
+**Quant Skills Registry**
+
+
+
+示例：
+
+```
+skills = [
+"generate_factor",
+"evaluate_factor",
+"backtest_strategy",
+"store_factor",
+"search_factor_db",
+"generate_report"
+]
+```
+
+每个 skill 对应一个函数。
+
+
+
+例如：
+
+```
+def evaluate_factor(factor):
+    ic = compute_ic(factor)
+    icir = compute_icir(factor)
+    return {"IC": ic, "ICIR": icir}
+```
+
+Agent 调用：
+
+```
+Tool: evaluate_factor
+```
+
+
+
+------
+
+
+
+
+
+# **四、RAG系统（Factor Knowledge Base）**
+
+
+
+
+
+RAG用于：
+
+```
+历史因子检索
+避免重复研究
+```
+
+数据库结构：
+
+```
+factor_expression
+IC
+ICIR
+Sharpe
+decay
+timestamp
+```
+
+向量化：
+
+```
+factor expression → embedding
+```
+
+流程：
+
+```
+new factor
+↓
+embedding
+↓
+vector search
+↓
+similar factor
+```
+
+这样 Agent 会知道：
+
+```
+这个因子已经研究过
+```
+
+
+
+------
+
+
+
+
+
+# **五、Memory系统**
+
+
+
+
+
+Agent系统一般会有：
+
+
+
+
+
+### **Short-term memory**
+
+
+
+
+
+保存当前任务状态：
+
+```
+current factor
+evaluation result
+```
+
+
+
+### **Long-term memory**
+
+
+
+
+
+存储：
+
+```
+factor DB
+research reports
+```
+
+Memory结构：
+
+```
+Task memory
+Factor memory
+Research memory
+```
+
+
+
+------
+
+
+
+
+
+# **六、MCP（Model Context Protocol）**
+
+
+
+
+
+MCP的作用：
+
+```
+统一模型与工具之间的通信
+```
+
+类似：
+
+```
+LLM ←→ Tools
+```
+
+MCP server可以提供：
+
+```
+factor_db_server
+backtest_server
+market_data_server
+```
+
+Agent调用：
+
+```
+call MCP tool: evaluate_factor
+```
+
+好处：
+
+
+
+- 模块解耦
+- 工具可扩展
+
+
+
+
+
+很多AI系统现在用这种方式。
+
+
+
+------
+
+
+
+
+
+# **七、任务调度（Orchestrator）**
+
+
+
+
+
+在多Agent系统中，需要一个：
+
+
+
+**Task Orchestrator**
+
+
+
+负责：
+
+```
+Agent之间通信
+任务调度
+失败重试
+```
+
+例如：
+
+```
+Planner Agent
+↓
+create tasks
+↓
+Task Queue
+↓
+Workers (Agents)
+```
+
+可以用：
+
+
+
+- Python async
+- Celery
+- simple task queue
+
+
+
+
+
+------
+
+
+
+
+
+# **八、项目代码结构（推荐）**
+
+
+
+
+
+一个比较清晰的结构：
+
+```
+alphapilot/
+
+agents/
+    planner_agent.py
+    generator_agent.py
+    evaluation_agent.py
+    backtest_agent.py
+    report_agent.py
+
+skills/
+    factor_generator.py
+    factor_evaluator.py
+    backtester.py
+    report_generator.py
+
+rag/
+    factor_vector_db.py
+    embeddings.py
+
+data/
+    market_data_loader.py
+
+core/
+    orchestrator.py
+    memory.py
+
+notebooks/
+    research_demo.ipynb
+```
+
+
+
+------
+
+
+
+
+
+# **九、项目技术栈（最终版）**
+
+
+
+
+
+推荐技术：
+
+
+
+LLM：
+
+
+
+- Qwen
+- LLaMA
+
+
+
+
+
+Agent框架：
+
+
+
+- LangChain
+- LlamaIndex
+
+
+
+
+
+向量数据库：
+
+
+
+- FAISS
+- Chroma
+
+
+
+
+
+量化计算：
+
+
+
+- Pandas
+- NumPy
+- SciPy
+
+
+
+
+
+回测：
+
+
+
+- Backtrader
+
+
+
+
+
+------
+
+
+
+
+
+# **十、真实难度（非常重要）**
+
+
+
+
+
+如果按工程难度：
+
+| **模块**                  | **难度** |
+| ------------------------- | -------- |
+| Agent                     | ⭐⭐       |
+| RAG                       | ⭐⭐⭐      |
+| Quant evaluation          | ⭐⭐⭐      |
+| Backtest                  | ⭐⭐⭐      |
+| Multi-agent orchestration | ⭐⭐⭐⭐     |
+
+但你其实可以：
+
+
+
+**先实现70%功能**
+
+
+
+就已经是：
+
+
+
+**非常强的AI + Quant项目**
+
+
+
+------
+
+
+
+如果你愿意，我可以帮你再设计一个 **“AlphaPilot 最终版架构图（工业级）”**：
+
+
+
+里面会包括：
+
+
+
+- Agent通信流程
+- MCP调用结构
+- Quant pipeline
+- 数据流
+
+
+
+
+
+这个图如果放在 **简历 / 面试 PPT** 里，会非常加分。
